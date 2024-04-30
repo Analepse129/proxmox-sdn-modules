@@ -1,5 +1,6 @@
 # proxmox-sdn-modules
-Ansible modules for Proxmox VE SDN feature
+Ansible modules for Proxmox VE SDN feature.
+Inspired by the work of Sergei Antipov (UnderGreen) for the proxmox_pool module.
 
 ## Installing
 Copy the files in your ansible modules folder.
