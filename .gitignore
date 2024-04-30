@@ -396,3 +396,9 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Setttings.json files
+settings.json
+
+# MacOS
+.DS_Store

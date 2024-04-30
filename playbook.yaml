@@ -1,0 +1,36 @@
+---
+- name: Ansible configure SDN
+  hosts: proxmox
+  gather_facts: no
+  vars:
+    api_user: ansible@pve
+    api_password: strongpassword
+    api_host: proxmox.mynet.lan
+  tasks:
+    - name: Create zone test
+      proxmox_sdn_zones:
+        api_user: '{{ api_user }}'
+        api_password: '{{ api_password }}'
+        api_host: '{{ api_host }}'
+        zone: testzone
+        type: simple
+        state: present      
+
+    - name: Create vnet testvnet
+      proxmox_sdn_vnets:
+        api_user: '{{ api_user }}'
+        api_password: '{{ api_password }}'
+        api_host: '{{ api_host }}'
+        vnet: myvnet
+        zone: testzone
+        state: present
+
+    - name: Create a subnet testsubnet
+      proxmox_sdn_subnets:
+        api_user: '{{ api_user }}'
+        api_password: '{{ api_password }}'
+        api_host: '{{ api_host }}'
+        vnet: myvnet
+        subnet: '192.168.130.0/24'
+        type:
+        state: present
