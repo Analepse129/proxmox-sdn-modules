@@ -77,7 +77,7 @@ class ProxmoxSdnSubnets(ProxmoxAnsible):
       except Exception as e:
           self.module.fail_json(msg="Unable to retrieve subnets: {0}".format(e))
   
-  def create_update_sdn_subnet(self, subnet_id, vnet_id, gateway):
+  def create_update_sdn_subnet(self, subnet_id, vnet_id, subnet_type, gateway):
       """Create Proxmox VE SDN subnet
 
       :param subnet: str - name of the vnet
@@ -88,7 +88,7 @@ class ProxmoxSdnSubnets(ProxmoxAnsible):
       if self.module.check_mode:
           return
       try:
-          self.proxmox_api.cluster.sdn.vnets(vnet_id).subnets.post(subnet=subnet_id, vnet=vnet_id, gateway=gateway)
+          self.proxmox_api.cluster.sdn.vnets(vnet_id).subnets.post(subnet=subnet_id, type=subnet_type, gateway=gateway)
       except Exception as e:
           self.module.fail_json(msg="Failed to create subnet with ID {0}: {1}".format(subnet_id, e))
     
@@ -119,7 +119,7 @@ def main():
         'state': {'type': 'str', 'choices': ['present', 'absent'], 'default': 'query'},
         # Mandatory
         'subnet': {'type': 'str', 'required': True},
-        'type': {'type': 'enum', 'required': False},
+        'type': {'type': 'str', 'default': 'subnet', 'required': False},
         'vnet': {'type': 'str', 'required': True},
         # Optionnal
         'dhcp-dns-server': {'type': 'str', 'required': False},
@@ -141,7 +141,7 @@ def main():
     vnet_id = module.params['vnet']
     dhcp_dns_server = module.params['dhcp-dns-server']
     dhcp_range = module.params['dhcp-range']
-    dns_zone_prefix = module.params['dnszoneprefix']
+    dnszoneprefix = module.params['dnszoneprefix']
     gateway = module.params['gateway']
     snat = module.params['snat']
 
@@ -149,7 +149,7 @@ def main():
 
     if state == 'present':
         # API call to create/update a subnet
-        proxmox.create_update_sdn_subnet(subnet_id, vnet_id, gateway)
+        proxmox.create_update_sdn_subnet(subnet_id, vnet_id, subnet_type, gateway)
         result['changed'] = True
         result['message'] = 'Creating/updating subnet ID: {}'.format(subnet_id)
     elif state == 'absent':
