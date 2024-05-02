@@ -22,12 +22,12 @@ Main options:
       - Define whether the zone should exist or not, taking 'present', 'absent'.
     choices: ['present', 'absent']
     type: str
-  zone_id:
+  zone:
     description:
       - The unique ID of the SDN zone.
     required: true
     type: str
-  zone_type:
+  zone:
     description:
       - The type of the zone, taking 'evpn', 'faucet', 'qinq', 'simple', 'vlan', 'vxlan'.
     choices: ['evpn', 'faucet', 'qinq', 'simple', 'vlan', 'vxlan']
@@ -38,16 +38,16 @@ requirements:
 '''
 
 EXAMPLES = r'''
-- name: Create a new SDN zone
+- name: Create a simple zone
   proxmox_sdn_zone:
     state: present
-    zone_id: "zone-02"
-    description: "This is a new zone for SDN."
+    zone: "zone-02"
+    type: simple
 
 - name: Delete an SDN zone
   proxmox_sdn_zone:
     state: absent
-    zone_id: "zone-03"
+    zone: "zone-02"
 '''
 
 from ansible.module_utils.basic import AnsibleModule
@@ -83,7 +83,7 @@ class ProxmoxSdnZones(ProxmoxAnsible):
         except Exception as e:
             self.module.fail_json(msg="Unable to retrieve zones: {0}".format(e))
     
-    def create_update_sdn_zone(self, zone_id, zone_type):
+    def create_update_sdn_zone(self, zone_id, zone_infos):
         """Create Proxmox VE SDN zone
 
         :param zone_id: str - name of the zone
@@ -97,32 +97,7 @@ class ProxmoxSdnZones(ProxmoxAnsible):
             return
 
         try:
-            self.proxmox_api.cluster.sdn.zones.post(zone = zone_id,
-                                                    type = zone_type,
-                                                    advertise_subnets = self.module.params.get('advertise-subnets'),
-                                                    bridge = self.module.params.get('bridge'),
-                                                    bridge_disable_mac_learning = self.module.params.get('bridge-disable-mac-learning'),
-                                                    controller = self.module.params.get('controller'),
-                                                    delete = self.module.params.get('delete'),
-                                                    dhcp = self.module.params.get('dhcp'),
-                                                    digest = self.module.params.get('digest'),
-                                                    disable_arp_nd_suppression = self.module.params.get('disable-arp-nd-suppression'),
-                                                    dns = self.module.params.get('dns'),
-                                                    dnszone = self.module.params.get('dnszone'),
-                                                    dp_id = self.module.params.get('dp-id'),
-                                                    exitnodes = self.module.params.get('exitnodes'),
-                                                    exitnodes_local_routing = self.module.params.get('exitnodes-local-routing'),
-                                                    ipam = self.module.params.get('ipam'),
-                                                    mac = self.module.params.get('mac'),
-                                                    mtu = self.module.params.get('mtu'),
-                                                    nodes = self.module.params.get('nodes'),
-                                                    peers = self.module.params.get('peers'),
-                                                    reversedns = self.module.params.get('reversedns'),
-                                                    rt_import = self.module.params.get('rt-import'),
-                                                    tag = self.module.params.get('tag'),
-                                                    vlan_protocol = self.module.params.get('vlan-protocol'),
-                                                    vrf_vxlan = self.module.params.get('vrf-vxlan'),
-                                                    vxlan_port = self.module.params.get('vxlan-port'))
+            self.proxmox_api.cluster.sdn.zones.post(**zone_infos)
         except Exception as e:
             self.module.fail_json(msg="Failed to create zone with ID {0}: {1}".format(zone_id, e))
       
@@ -160,8 +135,7 @@ def main():
         'bridge': {'type': 'str', 'required': False},
         'bridge-disable-mac-learning': {'type': 'bool', 'required': False},
         'controller': {'type': 'str', 'required': False},
-        'delete': {'type': 'str', 'required': False},
-        'dhcp': {'type': 'enum', 'required': False},
+        'dhcp': {'type': 'str', 'required': False},
         'digest': {'type': 'str', 'required': False},
         'disable-arp-nd-suppression': {'type': 'bool', 'required': False},
         'dns': {'type': 'str', 'required': False},
@@ -196,17 +170,61 @@ def main():
 
     # Ansible
     state = module.params['state']
-    # Mandatory
+    # Params
     zone_id = module.params['zone']
     zone_type = module.params['type']
-    # Optionnal
-    
+    if str(module.params['advertise-subnets']).lower() == 'true':
+        advertise_subnets = 1
+    else:
+        advertise_subnets = 0
+    if str(module.params['bridge-disable-mac-learning']).lower() == "true":
+        bridge_disable_mac_learning = 1
+    else:
+        bridge_disable_mac_learning = 0
+    if str(module.params['exitnodes-local-routing']).lower() == "true":
+        exitnodes_local_routing = 1
+    else:
+        exitnodes_local_routing = 0
+    if str(module.params['disable-arp-nd-suppression']).lower() == "true":
+        disable_arp_nd_suppression = 1
+    else:
+        disable_arp_nd_suppression = 0
+
+    # To pass params to creation function
+    zone_infos = {
+        'zone': zone_id,
+        'type': zone_type,
+        'advertise-subnets': advertise_subnets,
+        'bridge': module.params['bridge'],
+        'bridge-disable-mac-learning': bridge_disable_mac_learning,
+        'controller': module.params['controller'],
+        'dhcp': module.params['dhcp'],
+        'digest': module.params['digest'],
+        'disable-arp-nd-supression': disable_arp_nd_suppression,
+        'dns': module.params['dns'],
+        'dnszone': module.params['dnszone'],
+        'dp-id': module.params['dp-id'],
+        'exitnodes':module.params['exitnodes'],
+        'exitnodes-primary': module.params['exitnodes-primary'],
+        'exitnodes-local-routing': exitnodes_local_routing,
+        'ipam': module.params['ipam'],
+        'mac': module.params['mac'],
+        'mtu': module.params['mtu'],
+        'nodes': module.params['nodes'],
+        'peers': module.params['peers'],
+        'reversedns': module.params['reversedns'],
+        'rt-import': module.params['rt-import'],
+        'tag': module.params['tag'],
+        'vlan-protocol': module.params['vlan-protocol'],
+        'vrf-vxlan': module.params['vrf-vxlan'],
+        'vxlan-port': module.params['vxlan-port'],
+    }
 
     proxmox = ProxmoxSdnZones(module)
 
     if state == 'present':
         # API call to create/update a zone
-        proxmox.create_update_sdn_zone(zone_id, zone_type)
+        proxmox.create_update_sdn_zone(zone_id, zone_infos)
         result['changed'] = True
         result['message'] = 'Creating/updating zone ID: {}'.format(zone_id)
     elif state == 'absent':
