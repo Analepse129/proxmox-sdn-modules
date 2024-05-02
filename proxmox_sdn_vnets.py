@@ -22,12 +22,12 @@ options:
       - Define whether the vnet should exist or not, taking 'present', 'absent'.
     choices: ['present', 'absent']
     type: str
-  vnet_id:
+  vnet:
     description:
       - The unique ID of the SDN vnet.
     required: true
     type: str
-  zone_id:
+  zone:
     description:
       - The Zone ID that the vnet belongs to.
     required: true
@@ -84,7 +84,7 @@ class ProxmoxSdnVnets(ProxmoxAnsible):
         except Exception as e:
             self.module.fail_json(msg="Unable to retrieve vnets: {0}".format(e))
     
-    def create_update_sdn_vnet(self, vnet_id, zone_id):
+    def create_update_sdn_vnet(self, vnet_id, vnet_infos):
         """Create Proxmox VE SDN zone
 
         :param vnet: str - name of the vnet
@@ -98,11 +98,7 @@ class ProxmoxSdnVnets(ProxmoxAnsible):
             return
 
         try:
-            self.proxmox_api.cluster.sdn.vnets.post(vnet=vnet_id, zone=zone_id,
-                                                    alias=self.module.params['alias'],
-                                                    tag=self.module.params['tag'],
-                                                    type=self.module.params['type'],
-                                                    vlanaware=self.module.params['vlanaware'])
+            self.proxmox_api.cluster.sdn.vnets.post(**vnet_infos)
         except Exception as e:
             self.module.fail_json(msg="Failed to create vnet with ID {0}: {1}".format(vnet_id, e))
       
@@ -136,9 +132,9 @@ def main():
         'vnet': {'type': 'str', 'required': True},
         'zone': {'type': 'str', 'required': True},
         # Optionnal
-        'alias': {'type': 'string', 'required': False},
+        'alias': {'type': 'str', 'required': False},
         'tag': {'type': 'int', 'required': False},
-        'type': {'type': 'enum', 'required': False},
+        'type': {'type': 'str', 'required': False},
         'vlanaware': {'type': 'bool', 'required': False},
     }
 
@@ -150,15 +146,29 @@ def main():
 
     # Ansible
     state = module.params['state']
-    # Mandatory
+    # Params
     vnet_id = module.params['vnet']
     zone_id = module.params['zone']
+    if str(module.params['vlanaware']).lower() == 'true':
+        vlanaware = 1
+    else:
+        vlanaware = 0
+
+    # To pass params to creation function
+    vnet_infos = {
+        'vnet': vnet_id,
+        'zone': zone_id,
+        'alias': module.params['alias'],
+        'tag': module.params['tag'],
+        'type': module.params['type'],
+        'vlanaware': vlanaware
+    }
 
     proxmox = ProxmoxSdnVnets(module)
 
     if state == 'present':
         # API call to create/update a vnet
-        proxmox.create_update_sdn_vnet(vnet_id, zone_id)
+        proxmox.create_update_sdn_vnet(vnet_id, vnet_infos)
         result['changed'] = True
         result['message'] = 'Creating/updating vnet ID: {}'.format(vnet_id)
     elif state == 'absent':
