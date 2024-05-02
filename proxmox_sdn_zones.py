@@ -27,11 +27,126 @@ Main options:
       - The unique ID of the SDN zone.
     required: true
     type: str
-  zone:
+  type:
     description:
       - The type of the zone, taking 'evpn', 'faucet', 'qinq', 'simple', 'vlan', 'vxlan'.
     choices: ['evpn', 'faucet', 'qinq', 'simple', 'vlan', 'vxlan']
     type: str
+  advertise-subnets:
+    description:
+      - Advertise evpn subnets if you have silent hosts.
+    required: false
+    type: bool
+  bridge:
+    description:
+      - Name of the bridge the zone is connected to.
+    required: false
+    type: str
+  bridge-disable-mac-learning:
+    description:
+      - Disable auto mac learning.
+    required: false
+    type: bool
+  controller:
+    description:
+      - Frr router name.
+    required: false
+    type: bool
+  dhcp:
+    description:
+      - Type of the DHCP backend for this zone.
+    required: false
+    type: str
+  disable-arp-nd-suppression
+    description:
+      - Disable ipv4 arp && ipv6 neighbour discovery suppression.
+    required: false
+    type: bool
+  dns:
+    description:
+      - Dns api server.
+    required: false
+    type: str
+  dnszone:
+    description:
+      - Dns domain zone  ex: mydomain.com.
+    required: false
+    type: str
+  dp-id:
+    description: 
+      - Faucet dataplane id
+    required: false
+    type: int
+  exitnodes:
+    description:
+      - List of cluster node names.
+    required: false
+    type: str
+  exitnodes-local-routing:
+    description:
+      - Allow exitnodes to connect to evpn guests.
+    required: false
+    type: str
+  exitnodes-primary:
+    description:
+      - Force traffic to this exitnode first.
+    required: false
+    type: str
+  ipam:
+    description:
+      - Use a specific ipam.
+    required: false
+    type: str
+  mac:
+    description:
+      - Anycast logical router mac address.
+    required: false
+    type: str
+  mtu:
+    description:
+      - MTU.
+    required: false
+    type: int
+  nodes:
+    description:
+      - List of cluster node names.
+    required: false
+    type: str
+  peers:
+    description:
+      - Peers address list.
+    required: false
+    type: str
+  reversedns:
+    description:
+      - Reverse dns api server.
+    required: false
+    type: str
+  rt-import:
+    description:
+      - Route-Target import.
+    required: false
+    type: str
+  tag:
+    description:
+      - Service vlan tag
+    required: false
+    type: int
+  vlan-protocol:
+    description:
+      - Protocol used for vlaning. Can be either 802.1q or 802.1ad. Defaults on 802.1q.
+    required: false
+    type: str
+  vrf-vxlan:
+    description:
+      - L3 vni.
+    required: false
+    type: int
+  vxlan-port:
+    description:
+      - Vxlan tunnel udp port (default 4789).
+    required: false
+    type: int
 requirements:
   - proxmoxer
   - requests
@@ -41,8 +156,15 @@ EXAMPLES = r'''
 - name: Create a simple zone
   proxmox_sdn_zone:
     state: present
-    zone: "zone-02"
+    zone: "zone-01"
     type: simple
+
+- name: Create a VLAN zone
+  peoxmox_sdn_zone:
+    state: present
+    zone: "zone-02"
+    bridge: vmbr10
+
 
 - name: Delete an SDN zone
   proxmox_sdn_zone:
