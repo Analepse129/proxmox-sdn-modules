@@ -13,7 +13,7 @@ You can find all the releases here :
 
 | Release | Link | News |
 |:---:|:---:|---|
-|1.0|[github]()|Adding Proxmox SDN zones, vnets and subnets support for Ansible.|
+|1.0|[github](https://github.com/Analepse129/proxmox-sdn-modules/releases/tag/1.0)|Adding Proxmox SDN zones, vnets and subnets support for Ansible.|
 
 > When the developpement will be fininished and ready, I'll try to get this into the community.general repo.
 
