@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2024, Gabriel Morin
-# GNU General Public License v2.0 (see COPYING or https://www.gnu.org/licenses/gpl-2.0.txt)
-# SPDX-License-Identifier: GPL-2.0-or-later
+# GNU General Public License v3.0 (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
@@ -27,16 +27,41 @@ options:
       - The type of the subnet.
     required: true
     type: str
-  subnet_id:
+  subnet:
     description:
       - The unique ID of the SDN subnet, as form of a CIDR address.
     required: true
     type: str
-  vnet_id:
+  vnet:
     description:
       - The VNet ID that the subnet belongs to.
     required: true
     type: str
+  'dhcp-dns-server': 
+    description:
+      - 
+    required: false
+    type: 
+  'dhcp-range':
+    description:
+      - 
+    required: false
+    type: 
+  'dnszoneprefix':
+    description:
+      - 
+    required: false
+    type: 
+  'gateway':
+    description:
+      - 
+    required: false
+    type: 
+  'snat':
+    description:
+      - 
+    required: false
+    type: 
 requirements:
   - proxmoxer
   - requests
