@@ -102,10 +102,12 @@ class ProxmoxSdnSubnets(ProxmoxAnsible):
       except Exception as e:
           self.module.fail_json(msg="Unable to retrieve subnets: {0}".format(e))
   
-  def create_update_sdn_subnet(self, subnet_id, vnet_id, subnet_type, gateway):
+  def create_update_sdn_subnet(self, subnet_id, vnet_id, subnet_infos):
       """Create Proxmox VE SDN subnet
 
-      :param subnet: str - name of the vnet
+      :param subnet: str - name of the subnet
+      :param vnet_id: str - name of the parent vnet
+      :subnet_infos: dict - elements for the api call
       :return: None
       """
       if self.is_sdn_subnet_existing(subnet_id, vnet_id):
@@ -113,7 +115,7 @@ class ProxmoxSdnSubnets(ProxmoxAnsible):
       if self.module.check_mode:
           return
       try:
-          self.proxmox_api.cluster.sdn.vnets(vnet_id).subnets.post(subnet=subnet_id, type=subnet_type, gateway=gateway)
+          self.proxmox_api.cluster.sdn.vnets(vnet_id).subnets.post(**subnet_infos)
       except Exception as e:
           self.module.fail_json(msg="Failed to create subnet with ID {0}: {1}".format(subnet_id, e))
     
@@ -141,14 +143,14 @@ def main():
 
     sdn_subnets_args = {
         # Ansible
-        'state': {'type': 'str', 'choices': ['present', 'absent'], 'default': 'query'},
+        'state': {'type': 'str', 'choices': ['present', 'absent'], 'required': True},
         # Mandatory
         'subnet': {'type': 'str', 'required': True},
-        'type': {'type': 'str', 'default': 'subnet', 'required': False},
+        'type': {'type': 'str', 'default': 'subnet'},
         'vnet': {'type': 'str', 'required': True},
         # Optionnal
         'dhcp-dns-server': {'type': 'str', 'required': False},
-        'dhcp-range': {'type': 'array', 'required': False},
+        'dhcp-range': {'type': 'list', 'required': False},
         'dnszoneprefix': {'type': 'str', 'required': False},
         'gateway': {'type': 'str', 'required': False},
         'snat': {'type': 'bool', 'required': False},
@@ -160,21 +162,34 @@ def main():
 
     module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
 
+    # Ansible
     state = module.params['state']
+    # Params
     subnet_id = module.params['subnet']
     subnet_type = module.params['type']
     vnet_id = module.params['vnet']
-    dhcp_dns_server = module.params['dhcp-dns-server']
-    dhcp_range = module.params['dhcp-range']
-    dnszoneprefix = module.params['dnszoneprefix']
-    gateway = module.params['gateway']
-    snat = module.params['snat']
+    if str(module.params['snat']).lower() == "true":
+        snat = 1
+    else:
+        snat = 0
+
+    # To pass params to creation function
+    subnet_infos = {
+        "subnet": subnet_id,
+        "type": subnet_type,
+        "vnet": vnet_id,
+        "dhcp-dns-server": module.params['dhcp-dns-server'],
+        "dhcp-range": module.params['dhcp-range'],
+        "dnszoneprefix": module.params['dnszoneprefix'],
+        "gateway": module.params['gateway'],
+        "snat": snat
+    }
 
     proxmox = ProxmoxSdnSubnets(module)
 
     if state == 'present':
         # API call to create/update a subnet
-        proxmox.create_update_sdn_subnet(subnet_id, vnet_id, subnet_type, gateway)
+        proxmox.create_update_sdn_subnet(subnet_id, vnet_id, subnet_infos)
         result['changed'] = True
         result['message'] = 'Creating/updating subnet ID: {}'.format(subnet_id)
     elif state == 'absent':
