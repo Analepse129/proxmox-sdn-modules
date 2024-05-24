@@ -32,11 +32,21 @@ Main options:
       - The type of the zone, taking 'evpn', 'faucet', 'qinq', 'simple', 'vlan', 'vxlan'.
     choices: ['evpn', 'faucet', 'qinq', 'simple', 'vlan', 'vxlan']
     type: str
+  advertise-subnets:
+    description:
+      - Advertise evpn subnets if you have silent hosts.
+    required: false
+    type: bool
   bridge:
     description:
       - Name of the bridge the zone is connected to.
     required: false
     type: str
+  bridge-disable-mac-learning:
+    description:
+      - Disable auto mac learning.
+    required: false
+    type: bool
   controller:
     description:
       - Frr router name.
@@ -47,6 +57,11 @@ Main options:
       - Type of the DHCP backend for this zone.
     required: false
     type: str
+  disable-arp-nd-suppression
+    description:
+      - Disable ipv4 arp && ipv6 neighbour discovery suppression.
+    required: false
+    type: bool
   dns:
     description:
       - Dns api server.
@@ -65,6 +80,11 @@ Main options:
   exitnodes:
     description:
       - List of cluster node names.
+    required: false
+    type: str
+  exitnodes-local-routing:
+    description:
+      - Allow exitnodes to connect to evpn guests.
     required: false
     type: str
   exitnodes-primary:
@@ -112,6 +132,11 @@ Main options:
       - Service vlan tag
     required: false
     type: int
+  vlan-protocol:
+    description:
+      - Protocol used for vlaning. Can be either 802.1q or 802.1ad. Defaults on 802.1q.
+    required: false
+    type: str
   vrf-vxlan:
     description:
       - L3 vni.
@@ -227,15 +252,19 @@ def main():
         # Mandatory
         'zone': {'type': 'str', 'required': True},
         'type': {'type': 'str', 'choices': ['evpn', 'faucet', 'qinq', 'simple', 'vlan', 'vxlan'],'required': True},
-        # Optional
+        # Optionnal
+        'advertise-subnets': {'type': 'bool', 'required': False},
         'bridge': {'type': 'str', 'required': False},
+        'bridge-disable-mac-learning': {'type': 'bool', 'required': False},
         'controller': {'type': 'str', 'required': False},
         'dhcp': {'type': 'str', 'required': False},
         'digest': {'type': 'str', 'required': False},
+        'disable-arp-nd-suppression': {'type': 'bool', 'required': False},
         'dns': {'type': 'str', 'required': False},
         'dnszone': {'type': 'str', 'required': False},
         'dp-id': {'type': 'str', 'required': False},
         'exitnodes': {'type': 'str', 'required': False},
+        'exitnodes-local-routing': {'type': 'bool', 'required': False},
         'exitnodes-primary': {'type': 'str', 'required': False},
         'ipam': {'type': 'str', 'required': False},
         'mac': {'type': 'str', 'required': False},
@@ -245,6 +274,7 @@ def main():
         'reversedns': {'type': 'str', 'required': False},
         'rt-import': {'type': 'str', 'required': False},
         'tag': {'type': 'int', 'required': False},
+        'vlan-protocol': {'type': 'str', 'choices': ['802.1q', '802.1ad'], 'default': '802.1q'},
         'vrf-vxlan': {'type': 'int', 'required': False},
         'vxlan-port': {'type': 'int', 'required': False},
     }
@@ -265,20 +295,40 @@ def main():
     # Params
     zone_id = module.params['zone']
     zone_type = module.params['type']
+    if str(module.params['advertise-subnets']).lower() == 'true':
+        advertise_subnets = 1
+    else:
+        advertise_subnets = 0
+    if str(module.params['bridge-disable-mac-learning']).lower() == "true":
+        bridge_disable_mac_learning = 1
+    else:
+        bridge_disable_mac_learning = 0
+    if str(module.params['exitnodes-local-routing']).lower() == "true":
+        exitnodes_local_routing = 1
+    else:
+        exitnodes_local_routing = 0
+    if str(module.params['disable-arp-nd-suppression']).lower() == "true":
+        disable_arp_nd_suppression = 1
+    else:
+        disable_arp_nd_suppression = 0
 
     # To pass params to creation function
     zone_infos = {
         'zone': zone_id,
         'type': zone_type,
+        'advertise-subnets': advertise_subnets,
         'bridge': module.params['bridge'],
+        'bridge-disable-mac-learning': bridge_disable_mac_learning,
         'controller': module.params['controller'],
         'dhcp': module.params['dhcp'],
         'digest': module.params['digest'],
+        'disable-arp-nd-suppression': disable_arp_nd_suppression,
         'dns': module.params['dns'],
         'dnszone': module.params['dnszone'],
         'dp-id': module.params['dp-id'],
         'exitnodes':module.params['exitnodes'],
         'exitnodes-primary': module.params['exitnodes-primary'],
+        'exitnodes-local-routing': exitnodes_local_routing,
         'ipam': module.params['ipam'],
         'mac': module.params['mac'],
         'mtu': module.params['mtu'],
@@ -287,9 +337,21 @@ def main():
         'reversedns': module.params['reversedns'],
         'rt-import': module.params['rt-import'],
         'tag': module.params['tag'],
+        'vlan-protocol': module.params['vlan-protocol'],
         'vrf-vxlan': module.params['vrf-vxlan'],
         'vxlan-port': module.params['vxlan-port'],
     }
+
+    if zone_type == 'simple':
+      unexpected_properties = [
+        'vlan-protocol',
+        'advertise-subnets',
+        'exitnodes-local-routing',
+        'bridge-disable-mac-learning',
+        'disable-arp-nd-suppression'
+      ]
+      for key in unexpected_properties:
+        zone_infos.pop(key, None)
 
     proxmox = ProxmoxSdnZones(module)
 
