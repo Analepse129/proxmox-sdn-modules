@@ -322,7 +322,7 @@ def main():
         'controller': module.params['controller'],
         'dhcp': module.params['dhcp'],
         'digest': module.params['digest'],
-        'disable-arp-nd-supression': disable_arp_nd_suppression,
+        'disable-arp-nd-suppression': disable_arp_nd_suppression,
         'dns': module.params['dns'],
         'dnszone': module.params['dnszone'],
         'dp-id': module.params['dp-id'],
@@ -341,6 +341,17 @@ def main():
         'vrf-vxlan': module.params['vrf-vxlan'],
         'vxlan-port': module.params['vxlan-port'],
     }
+
+    if zone_type == 'simple':
+      unexpected_properties = [
+        'vlan-protocol',
+        'advertise-subnets',
+        'exitnodes-local-routing',
+        'bridge-disable-mac-learning',
+        'disable-arp-nd-suppression'
+      ]
+      for key in unexpected_properties:
+        zone_infos.pop(key, None)
 
     proxmox = ProxmoxSdnZones(module)
 
