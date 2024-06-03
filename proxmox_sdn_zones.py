@@ -73,7 +73,7 @@ Main options:
     required: false
     type: str
   dp-id:
-    description: 
+    description:
       - Faucet dataplane id
     required: false
     type: int
@@ -176,7 +176,7 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.community.general.plugins.module_utils.proxmox import (proxmox_auth_argument_spec, ProxmoxAnsible)
 
 class ProxmoxSdnZones(ProxmoxAnsible):
-    
+
     def is_sdn_zone_empty(self, zone_id):
         """Check whether zone has vnets
 
@@ -189,7 +189,7 @@ class ProxmoxSdnZones(ProxmoxAnsible):
           if vnet['zone'] == zone_id:
             value = value + 1
         return True if value == 0 else False
-    
+
     def is_sdn_zone_existing(self, zone_id):
         """Check whether zone already exist
 
@@ -204,7 +204,7 @@ class ProxmoxSdnZones(ProxmoxAnsible):
             return False
         except Exception as e:
             self.module.fail_json(msg="Unable to retrieve zones: {0}".format(e))
-    
+
     def create_update_sdn_zone(self, zone_id, zone_infos):
         """Create Proxmox VE SDN zone
 
@@ -220,9 +220,10 @@ class ProxmoxSdnZones(ProxmoxAnsible):
 
         try:
             self.proxmox_api.cluster.sdn.zones.post(**zone_infos)
+            self.proxmox_api.cluster.sdn.put()
         except Exception as e:
             self.module.fail_json(msg="Failed to create zone with ID {0}: {1}".format(zone_id, e))
-      
+
     def delete_sdn_zone(self, zone_id):
         """Delete Proxmox VE zone
 
@@ -238,6 +239,7 @@ class ProxmoxSdnZones(ProxmoxAnsible):
 
             try:
                 self.proxmox_api.cluster.sdn.zones(zone_id).delete()
+                self.proxmox_api.cluster.sdn.put()
             except Exception as e:
                 self.module.fail_json(msg="Failed to delete zone with ID {0}: {1}".format(zone_id, e))
         else:

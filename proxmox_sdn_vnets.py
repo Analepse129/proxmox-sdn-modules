@@ -55,7 +55,7 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.community.general.plugins.module_utils.proxmox import (proxmox_auth_argument_spec, ProxmoxAnsible)
 
 class ProxmoxSdnVnets(ProxmoxAnsible):
-    
+
     def is_sdn_vnet_empty(self, vnet_id):
         """Check whether vnet has subnets
 
@@ -68,7 +68,7 @@ class ProxmoxSdnVnets(ProxmoxAnsible):
           if subnet['vnet'] == vnet_id:
             value = value + 1
         return True if value == 0 else False
-    
+
     def is_sdn_vnet_existing(self, vnet_id):
         """Check whether vnet already exist
 
@@ -83,7 +83,7 @@ class ProxmoxSdnVnets(ProxmoxAnsible):
             return False
         except Exception as e:
             self.module.fail_json(msg="Unable to retrieve vnets: {0}".format(e))
-    
+
     def create_update_sdn_vnet(self, vnet_id, vnet_infos):
         """Create Proxmox VE SDN zone
 
@@ -99,9 +99,10 @@ class ProxmoxSdnVnets(ProxmoxAnsible):
 
         try:
             self.proxmox_api.cluster.sdn.vnets.post(**vnet_infos)
+            self.proxmox_api.cluster.sdn.put()
         except Exception as e:
             self.module.fail_json(msg="Failed to create vnet with ID {0}: {1}".format(vnet_id, e))
-      
+
     def delete_sdn_vnet(self, vnet_id):
         """Delete Proxmox VE vnet
 
@@ -117,6 +118,7 @@ class ProxmoxSdnVnets(ProxmoxAnsible):
 
             try:
                 self.proxmox_api.cluster.sdn.vnets(vnet_id).delete()
+                self.proxmox_api.cluster.sdn.put()
             except Exception as e:
                 self.module.fail_json(msg="Failed to delete vnet with ID {0}: {1}".format(vnet_id, e))
         else:
