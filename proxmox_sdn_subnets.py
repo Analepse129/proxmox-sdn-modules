@@ -37,31 +37,31 @@ options:
       - The VNet ID that the subnet belongs to.
     required: true
     type: str
-  'dhcp-dns-server': 
+  'dhcp-dns-server':
     description:
-      - 
+      -
     required: false
-    type: 
+    type:
   'dhcp-range':
     description:
-      - 
+      -
     required: false
-    type: 
+    type:
   'dnszoneprefix':
     description:
-      - 
+      -
     required: false
-    type: 
+    type:
   'gateway':
     description:
-      - 
+      -
     required: false
-    type: 
+    type:
   'snat':
     description:
-      - 
+      -
     required: false
-    type: 
+    type:
 requirements:
   - proxmoxer
   - requests
@@ -85,7 +85,7 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.community.general.plugins.module_utils.proxmox import (proxmox_auth_argument_spec, ProxmoxAnsible)
 
 class ProxmoxSdnSubnets(ProxmoxAnsible):
-  
+
   def is_sdn_subnet_existing(self, subnet_id, vnet_id):
       """Check whether subnet already exist
 
@@ -101,7 +101,7 @@ class ProxmoxSdnSubnets(ProxmoxAnsible):
           return False
       except Exception as e:
           self.module.fail_json(msg="Unable to retrieve subnets: {0}".format(e))
-  
+
   def create_update_sdn_subnet(self, subnet_id, vnet_id, subnet_infos):
       """Create Proxmox VE SDN subnet
 
@@ -116,9 +116,10 @@ class ProxmoxSdnSubnets(ProxmoxAnsible):
           return
       try:
           self.proxmox_api.cluster.sdn.vnets(vnet_id).subnets.post(**subnet_infos)
+          self.proxmox_api.cluster.sdn.put()
       except Exception as e:
           self.module.fail_json(msg="Failed to create subnet with ID {0}: {1}".format(subnet_id, e))
-    
+
   def delete_sdn_vnet(self, subnet_id, vnet_id):
       """Delete Proxmox VE subnet
 
@@ -130,15 +131,16 @@ class ProxmoxSdnSubnets(ProxmoxAnsible):
           self.module.exit_json(changed=False, vnet=vnet_id, msg="Subnet {0} doesn't exist".format(vnet_id))
       if self.is_sdn_vnet_empty(vnet_id):
           if self.module.check_mode:
-              self.module.fail_json(msg="Failed to delete subnet with ID {0}: vnet is empty.")    
+              self.module.fail_json(msg="Failed to delete subnet with ID {0}: vnet is empty.")
       else:
         try:
             self.proxmox_api.cluster.sdn.vnets(vnet_id).subnets(subnet_id).delete()
+            self.proxmox_api.cluster.sdn.put()
         except Exception as e:
             self.module.fail_json(msg="Failed to delete subnet with ID {0}: {1}".format(subnet_id, e))
 
 def main():
-    
+
     module_args = proxmox_auth_argument_spec()
 
     sdn_subnets_args = {
