@@ -342,7 +342,7 @@ def main():
         'vxlan-port': module.params['vxlan-port'],
     }
 
-    if zone_type == 'simple':
+    if zone_type is 'simple' or 'vlan':
       unexpected_properties = [
         'vlan-protocol',
         'advertise-subnets',
